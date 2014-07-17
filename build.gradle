@@ -1,0 +1,30 @@
+
+ext.sourceCompatibility = org.gradle.api.JavaVersion.VERSION_1_7
+ext.targetCompatibility = org.gradle.api.JavaVersion.VERSION_1_7
+
+allprojects {
+    group = 'uk.co.o2.tomcatplugin'
+    version = '0.1.0'
+    repositories {
+        maven {
+            name "nexus"
+            url "http://deneb.dev.o2.co.uk:8081/nexus/content/groups/public/"
+        }
+        maven {
+            name "thirdParty"
+            url "http://deneb.dev.o2.co.uk:8081/nexus/content/repositories/thirdparty/"
+        }
+        maven {
+            name "apigateway"
+            url "http://deneb.dev.o2.co.uk:8081/nexus/content/repositories/apigateway/"
+        }
+        maven{
+            name "anr"
+            url "http://deneb.dev.o2.co.uk:8081/nexus/content/repositories/anr/"
+        }
+    }
+}
+
+subprojects {
+    apply plugin: 'groovy'
+}
