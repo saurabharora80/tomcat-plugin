@@ -18,14 +18,13 @@ public class StartTomcat {
     public static void main(String[] args) throws ServletException, LifecycleException {
 
         final Tomcat tomcat = new Tomcat();
-        tomcat.setBaseDir(args[1]);
-
         tomcat.setPort(Integer.parseInt(args[0]));
+        tomcat.setBaseDir(args[1]);
+        tomcat.getHost().setAppBase("webapps");
 
-        for (String warPath : args[2].split(",")) {
-            String contextPath = warPath.replaceAll(".*[\\/]" , "").replaceAll(".war","");
-            tomcat.addWebapp("/" + contextPath, warPath);
-            tomcat.getHost().setAppBase(contextPath);
+        for (String warname : args[2].split(",")) {
+            String contextPath = contextPath(warname);
+            tomcat.addWebapp("/" + contextPath, warname);
         }
 
         Context context = tomcat.addContext("/", new File(".").getAbsolutePath());
@@ -54,6 +53,10 @@ public class StartTomcat {
         context.addServletMapping("/shutdown", "shutdown");
         tomcat.start();
         tomcat.getServer().await();
+    }
+
+    private static String contextPath(String warPath) {
+        return warPath.replace(".war", "");
     }
 
 }

@@ -38,5 +38,5 @@ dependencies {
 
 tomcatconfig {
     httpPort = "8444"
-    wars = ["/home/ee/dev/projects/tomcat-plugin/tomcat-plugin-testbed/aniserver.war"]
+    warUrls = ["http://deneb.dev.o2.co.uk:8091/view/o2-accounts/job/o2-accounts_FT_DEV/lastSuccessfulBuild/artifact/accounts/build/libs/accounts.war"]
 }
