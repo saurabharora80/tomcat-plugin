@@ -18,21 +18,29 @@ repositories {
     }
 }
 
+configurations {
+    embeddedtomcat
+}
+
 dependencies {
     compile gradleApi()
     compile localGroovy()
     compile "org.apache.tomcat.embed:tomcat-embed-core:7.0.32"
-    runtime "org.apache.tomcat.embed:tomcat-embed-logging-juli:7.0.32"
-    runtime "org.apache.tomcat:tomcat-servlet-api:7.0.32"
-    runtime "org.apache.tomcat:tomcat-catalina:7.0.32"
-    runtime("org.apache.tomcat:tomcat-jasper:7.0.32") {
+
+    embeddedtomcat "org.apache.tomcat.embed:tomcat-embed-core:7.0.32"
+    embeddedtomcat "org.apache.tomcat.embed:tomcat-embed-logging-juli:7.0.32"
+    embeddedtomcat "org.apache.tomcat:tomcat-servlet-api:7.0.32"
+    embeddedtomcat "org.apache.tomcat:tomcat-catalina:7.0.32"
+    embeddedtomcat("org.apache.tomcat:tomcat-jasper:7.0.32") {
         exclude group: 'org.eclipse.jdt.core.compiler', module: 'ecj'
     }
-    runtime "org.eclipse.jdt.core.compiler:ecj:3.5.1"
+    embeddedtomcat "org.eclipse.jdt.core.compiler:ecj:3.5.1"
 }
 
-task deployWar(type: JavaExec) {
-    main = "uk.co.o2.embeddedtomcat.StartTomcat"
-    classpath = sourceSets.main.runtimeClasspath
-    args = [""]
+jar {
+    from(configurations.embeddedtomcat.collect { it.isDirectory() ? it : zipTree(it) }) {
+        exclude "META-INF/*.SF"
+        exclude "META-INF/*.DSA"
+        exclude "META-INF/*.RSA"
+    }
 }

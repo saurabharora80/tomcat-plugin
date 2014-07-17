@@ -10,6 +10,7 @@ class TomcatPlugin implements Plugin<Project> {
 
         project.task('runWars') << {
             TomcatPluginConfig config = new TomcatPluginConfig(project, "tomcatconfig")
+            new File(config.getTomcatbasedir()).deleteDir()
             new File(config.getAppbase()).mkdirs()
             new StartEmbeddedTomcat(config, classpath(project)).onPort(config.httpPort).andDeployApps(downloadWars(config))
         }
@@ -17,6 +18,7 @@ class TomcatPlugin implements Plugin<Project> {
 
     private String[] downloadWars(TomcatPluginConfig config) {
         for (WarUrl url : config.getUrlOfWarsToDeploy()) {
+            println("Downloading ${url.get()}")
             new FileOutputStream("$config.appbase/$url.warname").write(url.get().openStream().bytes)
         }
         config.getUrlOfWarsToDeploy().collect { it.warname }
@@ -98,7 +100,7 @@ class StartEmbeddedTomcat {
         def processStartString = "java -classpath ${classpath} uk.co.o2.embeddedtomcat.StartTomcat ${port} " +
                 "$config.tomcatbasedir ${warnames.join(",")}"
 
-        println("executing $processStartString")
+        println("Starting Tomcat -> $processStartString")
 
         Process process = processStartString.execute()
         process.waitFor()

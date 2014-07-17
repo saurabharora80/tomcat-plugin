@@ -25,18 +25,13 @@ configurations {
 }
 
 dependencies {
-    embeddedtomcat "org.apache.tomcat.embed:tomcat-embed-core:7.0.32"
-    embeddedtomcat "org.apache.tomcat.embed:tomcat-embed-logging-juli:7.0.32"
-    embeddedtomcat "org.apache.tomcat:tomcat-servlet-api:7.0.32"
-    embeddedtomcat "org.apache.tomcat:tomcat-catalina:7.0.32"
-    embeddedtomcat("org.apache.tomcat:tomcat-jasper:7.0.32") {
-        exclude group: 'org.eclipse.jdt.core.compiler', module: 'ecj'
-    }
-    embeddedtomcat "org.eclipse.jdt.core.compiler:ecj:3.5.1"
     embeddedtomcat files("$projectDir/../tomcat-plugin/build/libs/tomcat-plugin-0.1.0.jar")
 }
 
 tomcatconfig {
     httpPort = "8444"
-    warUrls = ["http://deneb.dev.o2.co.uk:8091/view/o2-accounts/job/o2-accounts_FT_DEV/lastSuccessfulBuild/artifact/accounts/build/libs/accounts.war"]
+    warUrls = [
+        "http://deneb.dev.o2.co.uk:8091/view/o2-accounts/job/o2-accounts_FT_DEV/lastSuccessfulBuild/artifact/accounts/build/libs/accounts.war",
+        "http://deneb.dev.o2.co.uk:8095/job/aniserver_DEV/lastSuccessfulBuild/artifact/aniserver/build/libs/aniserver.war"
+    ]
 }
