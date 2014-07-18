@@ -13,7 +13,8 @@ class TomcatPlugin implements Plugin<Project> {
             new File(config.getTomcatbasedir()).deleteDir()
 
             new StartEmbeddedTomcat(project.projectDir, project.configurations.embeddedtomcat)
-                    .onHttpPort(config.httpPort).enableSSL(config.ssl)
+                    .onHttpPort(config.httpPort).enableSSL(config.ssl).enableDebug(config.debugPort)
+                    .withJvmOptions(config.jvmOptions).withJvmProperties(config.jvmProperties)
                     .andDeployApps(config.urlOfWarsToDeploy)
         }
     }
@@ -23,6 +24,9 @@ class TomcatPluginExtension {
     def httpPort = 9191
     def warUrls
     def ssl
+    def debugPort
+    def jvmOptions
+    def jvmProperties
 }
 
 class TomcatPluginConfig {
@@ -35,8 +39,9 @@ class TomcatPluginConfig {
     }
 
     Integer getHttpPort() {
-        config().get("httpPort");
+        Verify.isAnInteger(config(), "httpPort");
     }
+
 
     String getTomcatbasedir() {
         "$project.projectDir/embeddedtomcat"
@@ -52,16 +57,43 @@ class TomcatPluginConfig {
 
     SslConfig getSsl() {
         def ssl = config().get("ssl")
-        if(ssl == null) {
+        if (ssl == null) {
             return null;
         }
-        new SslConfig(port: ssl.port, certLocation: "$project.projectDir/${ssl.cert}")
+        new SslConfig(port: Verify.isAnInteger(ssl.port, "ssl.port"), certLocation: "$project.projectDir/${ssl.cert}")
+    }
+
+    Integer getDebugPort() {
+        Verify.isAnInteger(config(), 'debugPort')
+    }
+
+    String getJvmOptions() {
+        config().get('jvmOptions')
+    }
+
+    String[] getJvmProperties() {
+        config().get('jvmProperties')
     }
 }
 
 class SslConfig {
     Integer port
     String certLocation
+
+}
+
+class Verify {
+    public static Integer isAnInteger(Map config, String key) {
+        isAnInteger(config.get(key), key)
+    }
+
+    public static Integer isAnInteger(Object get, String key) {
+        try {
+            (Integer) get
+        } catch (ClassCastException ex) {
+            throw new RuntimeException("'$key' must be an Integer")
+        }
+    }
 }
 
 

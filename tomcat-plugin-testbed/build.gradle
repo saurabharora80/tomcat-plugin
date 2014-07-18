@@ -38,4 +38,7 @@ tomcatconfig {
         port: 8443,
         cert: "ssl/accounts.keystore"
     ]
+    debugPort = 9000
+    jvmOptions = "-XX:MaxPermSize=512m"
+    jvmProperties = ["-DBROADWAY_ENV=dev"]
 }

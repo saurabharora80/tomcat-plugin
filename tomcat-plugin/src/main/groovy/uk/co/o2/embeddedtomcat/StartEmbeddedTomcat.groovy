@@ -7,6 +7,9 @@ class StartEmbeddedTomcat {
     private String classpath
     private String tomcatbasedir
     private SslConfig ssl
+    private Integer debugPort
+    private String jvmOptions
+    private String jvmProperties
 
     StartEmbeddedTomcat(File projectDir, Configuration gradleConfigurationForClasspath) {
         this(projectDir, gradleConfigurationForClasspath.collect { return it.absolutePath }.join(File.pathSeparator))
@@ -27,10 +30,25 @@ class StartEmbeddedTomcat {
         return this
     }
 
+    StartEmbeddedTomcat enableDebug(Integer port) {
+        this.debugPort = port
+        return this
+    }
+
+    StartEmbeddedTomcat withJvmOptions(String jvmOptions) {
+        this.jvmOptions = jvmOptions
+        return this
+    }
+
+    StartEmbeddedTomcat withJvmProperties(String[] jvmProperties) {
+        this.jvmProperties = jvmProperties?.join(' ')
+        return this
+    }
+
     void andDeployApps(WarUrl[] urlOfWarsToDeploy) {
         String[] warnames = downloadWars(urlOfWarsToDeploy, "$tomcatbasedir/webapps")
 
-        def processStartString = "java -classpath ${classpath} uk.co.o2.embeddedtomcat.StartTomcat ${httpPort} " +
+        def processStartString = "java -classpath ${classpath} ${jvmArgs()} uk.co.o2.embeddedtomcat.StartTomcat ${httpPort} " +
                 "$tomcatbasedir ${warnames.join(",")}"
 
         if(ssl!=null) {
@@ -60,5 +78,19 @@ class StartEmbeddedTomcat {
     private void logOutput(Process process, String tomcatbasedir) {
         def tomcatLogStream = new File("$tomcatbasedir/tomcat.log").newOutputStream()
         process.waitForProcessOutput(tomcatLogStream, tomcatLogStream)
+    }
+
+    private String jvmArgs() {
+        String jvmArgs = ''
+        if (debugPort != null) {
+            jvmArgs = "-Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=${debugPort}"
+        }
+        if(jvmOptions !=null) {
+            jvmArgs += " $jvmOptions"
+        }
+        if(jvmProperties !=null) {
+            jvmArgs += " $jvmProperties"
+        }
+        jvmArgs
     }
 }
