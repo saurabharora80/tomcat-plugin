@@ -2,6 +2,7 @@ package uk.co.o2.embeddedtomcat;
 
 import org.apache.catalina.Context;
 import org.apache.catalina.LifecycleException;
+import org.apache.catalina.connector.Connector;
 import org.apache.catalina.startup.Tomcat;
 
 import javax.servlet.ServletException;
@@ -17,12 +18,23 @@ public class StartTomcat {
     @SuppressWarnings("serial")
     public static void main(String[] args) throws ServletException, LifecycleException {
 
+        int port = Integer.parseInt(args[0]);
+        String tomcatBasedir = args[1];
+        String warnames = args[2];
+
         final Tomcat tomcat = new Tomcat();
-        tomcat.setPort(Integer.parseInt(args[0]));
-        tomcat.setBaseDir(args[1]);
+        tomcat.setBaseDir(tomcatBasedir);
         tomcat.getHost().setAppBase("webapps");
 
-        for (String warname : args[2].split(",")) {
+        tomcat.setPort(port);
+
+        if (args.length > 4) {
+            int httpsPort = Integer.parseInt(args[3]);
+            String keystore = args[4];
+            tomcat.getService().addConnector(new HttpsConnector(httpsPort, keystore));
+        }
+
+        for (String warname : warnames.split(",")) {
             String contextPath = contextPath(warname);
             tomcat.addWebapp("/" + contextPath, warname);
         }
@@ -59,4 +71,19 @@ public class StartTomcat {
         return warPath.replace(".war", "");
     }
 
+}
+
+class HttpsConnector extends Connector {
+    HttpsConnector(int httpsPort, String keystore) {
+        setScheme("https");
+        setPort(httpsPort);
+        setProperty("maxPostSize", "0");  // unlimited
+        setProperty("xpoweredBy", "true");
+        setSecure(true);
+        setProperty("SSLEnabled", "true");
+        setProperty("clientAuth", "false");
+        setProperty("sslProtocol", "TLS");
+        setProperty("keystoreFile", keystore);
+        setProperty("keystorePass", "changeit");
+    }
 }

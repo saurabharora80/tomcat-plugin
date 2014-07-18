@@ -3,9 +3,10 @@ package uk.co.o2.embeddedtomcat
 import org.gradle.api.artifacts.Configuration
 
 class StartEmbeddedTomcat {
-    private String port = "9191"
+    private Integer httpPort
     private String classpath
     private String tomcatbasedir
+    private SslConfig ssl
 
     StartEmbeddedTomcat(File projectDir, Configuration gradleConfigurationForClasspath) {
         this(projectDir, gradleConfigurationForClasspath.collect { return it.absolutePath }.join(File.pathSeparator))
@@ -16,15 +17,25 @@ class StartEmbeddedTomcat {
         this.tomcatbasedir = "$projectDir/embeddedtomcat"
     }
 
-    StartEmbeddedTomcat onPort(String port) {
-        this.port = port
+    StartEmbeddedTomcat onHttpPort(Integer port) {
+        this.httpPort = port
+        return this
+    }
+
+    StartEmbeddedTomcat enableSSL(SslConfig ssl) {
+        this.ssl = ssl
         return this
     }
 
     void andDeployApps(WarUrl[] urlOfWarsToDeploy) {
         String[] warnames = downloadWars(urlOfWarsToDeploy, "$tomcatbasedir/webapps")
-        def processStartString = "java -classpath ${classpath} uk.co.o2.embeddedtomcat.StartTomcat ${port} " +
+
+        def processStartString = "java -classpath ${classpath} uk.co.o2.embeddedtomcat.StartTomcat ${httpPort} " +
                 "$tomcatbasedir ${warnames.join(",")}"
+
+        if(ssl!=null) {
+            processStartString += " $ssl.port $ssl.certLocation"
+        }
 
         println("Starting Tomcat -> $processStartString")
 

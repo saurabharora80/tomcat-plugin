@@ -2,7 +2,6 @@ package uk.co.o2.embeddedtomcat
 
 import org.gradle.api.Plugin
 import org.gradle.api.Project
-import org.gradle.api.artifacts.Configuration
 
 class TomcatPlugin implements Plugin<Project> {
 
@@ -14,15 +13,16 @@ class TomcatPlugin implements Plugin<Project> {
             new File(config.getTomcatbasedir()).deleteDir()
 
             new StartEmbeddedTomcat(project.projectDir, project.configurations.embeddedtomcat)
-                    .onPort(config.httpPort)
+                    .onHttpPort(config.httpPort).enableSSL(config.ssl)
                     .andDeployApps(config.urlOfWarsToDeploy)
         }
     }
 }
 
 class TomcatPluginExtension {
-    def httpPort = "9191"
+    def httpPort = 9191
     def warUrls
+    def ssl
 }
 
 class TomcatPluginConfig {
@@ -34,7 +34,7 @@ class TomcatPluginConfig {
         this.project = project
     }
 
-    String getHttpPort() {
+    Integer getHttpPort() {
         config().get("httpPort");
     }
 
@@ -50,6 +50,18 @@ class TomcatPluginConfig {
         project.getExtensions().getByName(configwrappername).getProperties()
     }
 
+    SslConfig getSsl() {
+        def ssl = config().get("ssl")
+        if(ssl == null) {
+            return null;
+        }
+        new SslConfig(port: ssl.port, certLocation: "$project.projectDir/${ssl.cert}")
+    }
+}
+
+class SslConfig {
+    Integer port
+    String certLocation
 }
 
 
