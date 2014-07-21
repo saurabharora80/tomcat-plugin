@@ -51,21 +51,38 @@ class StartEmbeddedTomcat {
         def processStartString = "java -classpath ${classpath} ${jvmArgs()} uk.co.o2.embeddedtomcat.StartTomcat ${httpPort} " +
                 "$tomcatbasedir ${warnames.join(",")}"
 
-        if(ssl!=null) {
+        if (ssl != null) {
             processStartString += " $ssl.port $ssl.certLocation"
         }
 
         println("Starting Tomcat -> $processStartString")
 
         Process process = processStartString.execute()
-        process.waitFor()
+        waitForTomcat()
 
         logOutput(process, tomcatbasedir)
     }
 
+    private void waitForTomcat() {
+        def tomcatPing = "http://localhost:${httpPort}/ping"
+        println "Waiting for tomcat to start: ${tomcatPing}"
+        def count = 0;
+        while (count < 60) {
+            try {
+                Thread.sleep(1000)
+                if (tomcatPing.toURL().text.equals("OK")){
+                    break
+                }
+            } catch (Exception exp) {
+            }
+            ++count
+        }
+        println "Tomcat Started"
+    }
+
     private String[] downloadWars(WarUrl[] urlOfWarsToDeploy, String appbase) {
         File webappsDirectory = new File(appbase)
-        if(!webappsDirectory.exists()) {
+        if (!webappsDirectory.exists()) {
             webappsDirectory.mkdirs()
         }
         for (WarUrl url : urlOfWarsToDeploy) {
@@ -77,7 +94,7 @@ class StartEmbeddedTomcat {
 
     private void logOutput(Process process, String tomcatbasedir) {
         def tomcatLogStream = new File("$tomcatbasedir/tomcat.log").newOutputStream()
-        process.waitForProcessOutput(tomcatLogStream, tomcatLogStream)
+        process.consumeProcessOutput(tomcatLogStream, tomcatLogStream)
     }
 
     private String jvmArgs() {
@@ -85,10 +102,10 @@ class StartEmbeddedTomcat {
         if (debugPort != null) {
             jvmArgs = "-Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=${debugPort}"
         }
-        if(jvmOptions !=null) {
+        if (jvmOptions != null) {
             jvmArgs += " $jvmOptions"
         }
-        if(jvmProperties !=null) {
+        if (jvmProperties != null) {
             jvmArgs += " $jvmProperties"
         }
         jvmArgs
