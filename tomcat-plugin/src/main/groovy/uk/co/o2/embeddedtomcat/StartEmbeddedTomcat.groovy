@@ -48,7 +48,7 @@ class StartEmbeddedTomcat {
     void andDeployApps(WarUrl[] urlOfWarsToDeploy) {
         String[] warnames = downloadWars(urlOfWarsToDeploy, "$tomcatbasedir/webapps")
 
-        def processStartString = "java -classpath ${classpath} ${jvmArgs()} uk.co.o2.embeddedtomcat.StartTomcat ${httpPort} " +
+        def processStartString = "java -classpath ${classpath} ${jvmArgs()} ${EmbeddedTomcat.class.name} ${httpPort} " +
                 "$tomcatbasedir ${warnames.join(",")}"
 
         if (ssl != null) {

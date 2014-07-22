@@ -13,7 +13,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 
-public class StartTomcat {
+public class EmbeddedTomcat {
 
     @SuppressWarnings("serial")
     public static void main(String[] args) throws ServletException, LifecycleException {

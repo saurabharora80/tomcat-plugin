@@ -8,7 +8,18 @@ class TomcatPlugin implements Plugin<Project> {
     void apply(Project project) {
         project.extensions.create("tomcatconfig", TomcatPluginExtension)
 
-        project.task('runWars') << {
+        project.task("stopEmbeddedTomcat") << {
+            String embeddedTomcatProcess = "jps -ml".execute().text.split('\n').find {
+                it.contains("${EmbeddedTomcat.class.name}")
+            }
+            if (embeddedTomcatProcess) {
+                println "-- killing embeddedTomcat"
+                String pid = embeddedTomcatProcess.split(' ')[0]
+                "kill -9 ${pid}".execute().waitFor()
+            }
+        }
+
+        project.task('startEmbeddedTomcat').dependsOn('stopEmbeddedTomcat') << {
             TomcatPluginConfig config = new TomcatPluginConfig(project, "tomcatconfig")
             new File(config.getTomcatbasedir()).deleteDir()
 
