@@ -21,13 +21,26 @@ class TomcatPlugin implements Plugin<Project> {
 
         project.task('startEmbeddedTomcat').dependsOn('stopEmbeddedTomcat') << {
             TomcatPluginConfig config = new TomcatPluginConfig(project, "tomcatconfig")
-            new File(config.getTomcatbasedir()).deleteDir()
+            if (shouldPerformCleanStartUp()) {
+                println "-- clean startup; deleting embeddedtomcat directory"
+                config.tomcatbasedir.deleteDir()
+            } else {
+                println "-- cleaning up logs, work and exploded war directories"
+                new File("${config.tomcatbasedir}/logs").deleteDir()
+                new File("${config.tomcatbasedir}/work").deleteDir()
+                config.tomcatbasedir.listFiles().each { if (it.isFile()) { it.delete() } }
+                config.webappdir.listFiles().each { if (it.isDirectory()) { it.deleteDir() }}
+            }
 
-            new StartEmbeddedTomcat(project.projectDir, project.configurations.embeddedtomcat)
+            new StartEmbeddedTomcat(config.tomcatbasedir, project.configurations.embeddedtomcat)
                     .onHttpPort(config.httpPort).enableSSL(config.ssl).enableDebug(config.debugPort)
                     .withJvmOptions(config.jvmOptions).withJvmProperties(config.jvmProperties)
-                    .andDeployApps(config.urlOfWarsToDeploy)
+                    .andDeployApps(config.urlOfWarsToDeploy, config.webappdir)
         }
+    }
+
+    static boolean shouldPerformCleanStartUp() {
+        System.getProperty("cleanET") != null
     }
 }
 
@@ -36,7 +49,7 @@ class TomcatPluginExtension {
     def warUrls
     def ssl
     def debugPort
-    def jvmOptions
+    def jvmOptions = "-Xms256m -Xmx1G -XX:MaxPermSize=512m"
     def jvmProperties
 }
 
@@ -54,12 +67,17 @@ class TomcatPluginConfig {
     }
 
 
-    String getTomcatbasedir() {
-        "$project.projectDir/embeddedtomcat"
+    File getTomcatbasedir() {
+        new File("$project.projectDir/embeddedtomcat")
     }
 
-    WarUrl[] getUrlOfWarsToDeploy() {
-        config().get("warUrls").collect { new WarUrl((String) it) }
+
+    File getWebappdir() {
+        new File("$tomcatbasedir/webapps")
+    }
+
+    WarPath[] getUrlOfWarsToDeploy() {
+        config().get("warUrls").collect { new WarPath((String) it) }
     }
 
     private Map config() {

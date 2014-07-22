@@ -15,9 +15,9 @@ class StartEmbeddedTomcat {
         this(projectDir, gradleConfigurationForClasspath.collect { return it.absolutePath }.join(File.pathSeparator))
     }
 
-    StartEmbeddedTomcat(File projectDir, String classpath) {
+    StartEmbeddedTomcat(File tomcatbasedir, String classpath) {
         this.classpath = classpath
-        this.tomcatbasedir = "$projectDir/embeddedtomcat"
+        this.tomcatbasedir = tomcatbasedir
     }
 
     StartEmbeddedTomcat onHttpPort(Integer port) {
@@ -45,8 +45,8 @@ class StartEmbeddedTomcat {
         return this
     }
 
-    void andDeployApps(WarUrl[] urlOfWarsToDeploy) {
-        String[] warnames = downloadWars(urlOfWarsToDeploy, "$tomcatbasedir/webapps")
+    void andDeployApps(WarPath[] urlOfWarsToDeploy, File webappsDir) {
+        String[] warnames = downloadOrCopyWarsOnCleanStartUp(urlOfWarsToDeploy, webappsDir)
 
         def processStartString = "java -classpath ${classpath} ${jvmArgs()} ${EmbeddedTomcat.class.name} ${httpPort} " +
                 "$tomcatbasedir ${warnames.join(",")}"
@@ -58,9 +58,10 @@ class StartEmbeddedTomcat {
         println("Starting Tomcat -> $processStartString")
 
         Process process = processStartString.execute()
+        logOutput(process, tomcatbasedir)
+
         waitForTomcat()
 
-        logOutput(process, tomcatbasedir)
     }
 
     private void waitForTomcat() {
@@ -70,7 +71,7 @@ class StartEmbeddedTomcat {
         while (count < 60) {
             try {
                 Thread.sleep(1000)
-                if (tomcatPing.toURL().text.equals("OK")){
+                if (tomcatPing.toURL().text.equals("OK")) {
                     break
                 }
             } catch (Exception exp) {
@@ -80,16 +81,25 @@ class StartEmbeddedTomcat {
         println "Tomcat Started"
     }
 
-    private String[] downloadWars(WarUrl[] urlOfWarsToDeploy, String appbase) {
-        File webappsDirectory = new File(appbase)
+    private String[] downloadOrCopyWarsOnCleanStartUp(WarPath[] warPaths, File webappsDirectory) {
         if (!webappsDirectory.exists()) {
             webappsDirectory.mkdirs()
         }
-        for (WarUrl url : urlOfWarsToDeploy) {
-            println("Downloading ${url.get()}")
-            new FileOutputStream("$appbase/$url.warname").write(url.get().openStream().bytes)
+        for (WarPath path : warPaths) {
+            if (TomcatPlugin.shouldPerformCleanStartUp()) {
+                if (path.isUrl()) {
+                    println("-- Downloading $path.value")
+                    new FileOutputStream("$webappsDirectory/$path.warname").write(path.value.openStream().bytes)
+                } else {
+                    println "-- coping $path.value to $webappsDirectory"
+                    "cp $path.value $webappsDirectory".execute().waitFor()
+                }
+            } else {
+                println " -- skipping downloading $path.warname; to download the war again pass -DcleanET"
+            }
         }
-        urlOfWarsToDeploy.collect { it.warname }
+
+        warPaths.collect { it.warname }
     }
 
     private void logOutput(Process process, String tomcatbasedir) {

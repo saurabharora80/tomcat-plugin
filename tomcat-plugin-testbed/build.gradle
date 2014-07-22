@@ -31,8 +31,8 @@ dependencies {
 tomcatconfig {
     httpPort = 8444
     warUrls = [
-        "http://deneb.dev.o2.co.uk:8091/view/o2-accounts/job/o2-accounts_FT_DEV/lastSuccessfulBuild/artifact/accounts/build/libs/accounts.war"
-        ,"http://deneb.dev.o2.co.uk:8095/job/aniserver_DEV/lastSuccessfulBuild/artifact/aniserver/build/libs/aniserver.war"
+        "../../accounts/accounts/build/libs/accounts.war",
+        "http://deneb.dev.o2.co.uk:8095/job/aniserver_DEV/lastSuccessfulBuild/artifact/aniserver/build/libs/aniserver.war"
     ]
     ssl = [
         port: 8443,
