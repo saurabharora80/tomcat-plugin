@@ -7,20 +7,13 @@ class TomcatPlugin implements Plugin<Project> {
 
     void apply(Project project) {
         project.extensions.create("tomcatconfig", TomcatPluginExtension)
+        TomcatPluginConfig config = new TomcatPluginConfig(project, "tomcatconfig")
 
         project.task("stopEmbeddedTomcat") << {
-            String embeddedTomcatProcess = "jps -ml".execute().text.split('\n').find {
-                it.contains("${EmbeddedTomcat.class.name}")
-            }
-            if (embeddedTomcatProcess) {
-                println "-- killing embeddedTomcat"
-                String pid = embeddedTomcatProcess.split(' ')[0]
-                "kill -9 ${pid}".execute().waitFor()
-            }
+            EmbeddedTomcatStopper.stop(config.httpPort)
         }
 
         project.task('startEmbeddedTomcat').dependsOn('stopEmbeddedTomcat') << {
-            TomcatPluginConfig config = new TomcatPluginConfig(project, "tomcatconfig")
             if (shouldPerformCleanStartUp()) {
                 println "-- clean startup; deleting embeddedtomcat directory"
                 config.tomcatbasedir.deleteDir()
@@ -35,7 +28,7 @@ class TomcatPlugin implements Plugin<Project> {
             new StartEmbeddedTomcat(config.tomcatbasedir, project.configurations.embeddedtomcat)
                     .onHttpPort(config.httpPort).enableSSL(config.ssl).enableDebug(config.debugPort)
                     .withJvmOptions(config.jvmOptions).withJvmProperties(config.jvmProperties)
-                    .andDeployApps(config.urlOfWarsToDeploy, config.webappdir)
+                    .andDeployApps(config.webappdir, config.urlOfWarsToDeploy)
         }
     }
 
@@ -89,7 +82,9 @@ class TomcatPluginConfig {
         if (ssl == null) {
             return null;
         }
-        new SslConfig(port: Verify.isAnInteger(ssl.port, "ssl.port"), certLocation: "$project.projectDir/${ssl.cert}")
+        def truststoreConfig = ssl.truststore ? new TruststoreConfig(path: "$project.projectDir/${ssl.truststore.path}", password: ssl.truststore.password) : null
+        new SslConfig(port: Verify.isAnInteger(ssl.port, "ssl.port"), certLocation: "$project.projectDir/${ssl.cert}",
+                truststore: truststoreConfig)
     }
 
     Integer getDebugPort() {
@@ -108,7 +103,12 @@ class TomcatPluginConfig {
 class SslConfig {
     Integer port
     String certLocation
+    TruststoreConfig truststore
+}
 
+class TruststoreConfig {
+    String path
+    String password
 }
 
 class Verify {

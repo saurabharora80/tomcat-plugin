@@ -45,8 +45,8 @@ class StartEmbeddedTomcat {
         return this
     }
 
-    void andDeployApps(WarPath[] urlOfWarsToDeploy, File webappsDir) {
-        String[] warnames = downloadOrCopyWarsOnCleanStartUp(urlOfWarsToDeploy, webappsDir)
+    void andDeployApps(File webappsDir, WarPath... urlOfWarsToDeploy) {
+        String[] warnames = downloadOrCopyWarsOnCleanStartUp(webappsDir, urlOfWarsToDeploy)
 
         def processStartString = "java -classpath ${classpath} ${jvmArgs()} ${EmbeddedTomcat.class.name} ${httpPort} " +
                 "$tomcatbasedir ${warnames.join(",")}"
@@ -81,28 +81,36 @@ class StartEmbeddedTomcat {
         println "Tomcat Started"
     }
 
-    private String[] downloadOrCopyWarsOnCleanStartUp(WarPath[] warPaths, File webappsDirectory) {
+    private static String[] downloadOrCopyWarsOnCleanStartUp(File webappsDirectory, WarPath[] warPaths) {
         if (!webappsDirectory.exists()) {
             webappsDirectory.mkdirs()
         }
         for (WarPath path : warPaths) {
             if (TomcatPlugin.shouldPerformCleanStartUp()) {
-                if (path.isUrl()) {
-                    println("-- Downloading $path.value")
-                    new FileOutputStream("$webappsDirectory/$path.warname").write(path.value.openStream().bytes)
-                } else {
-                    println "-- coping $path.value to $webappsDirectory"
-                    "cp $path.value $webappsDirectory".execute().waitFor()
-                }
+                downloadWar(path, webappsDirectory)
             } else {
-                println " -- skipping downloading $path.warname; to download the war again pass -DcleanET"
+                if(new File("$webappsDirectory/$path.warname").exists()) {
+                    println " -- skipping downloading $path.warname as it already exists; to download the war again pass -DcleanET"
+                } else {
+                    downloadWar(path, webappsDirectory)
+                }
             }
         }
 
         warPaths.collect { it.warname }
     }
 
-    private void logOutput(Process process, String tomcatbasedir) {
+    private static void downloadWar(WarPath path, File webappsDirectory) {
+        if (path.isUrl()) {
+            println("-- Downloading $path.value")
+            new FileOutputStream("$webappsDirectory/$path.warname").write(path.value.openStream().bytes)
+        } else {
+            println "-- coping $path.value to $webappsDirectory"
+            "cp $path.value $webappsDirectory".execute().waitFor()
+        }
+    }
+
+    private static void logOutput(Process process, String tomcatbasedir) {
         def tomcatLogStream = new File("$tomcatbasedir/tomcat.log").newOutputStream()
         process.consumeProcessOutput(tomcatLogStream, tomcatLogStream)
     }
@@ -117,6 +125,9 @@ class StartEmbeddedTomcat {
         }
         if (jvmProperties != null) {
             jvmArgs += " $jvmProperties"
+        }
+        if(ssl && ssl.truststore) {
+            jvmArgs += " -Djavax.net.ssl.trustStore=$ssl.truststore.path -Djavax.net.ssl.trustStorePassword=$ssl.truststore.password"
         }
         jvmArgs
     }
