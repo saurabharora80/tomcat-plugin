@@ -44,3 +44,17 @@ jar {
         exclude "META-INF/*.RSA"
     }
 }
+
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            repository(url: 'http://deneb.dev.o2.co.uk:8081/nexus/content/repositories/apigateway/') {
+                authentication(userName: "admin", password: "admin123")
+            }
+            pom.version = "0.1.0"
+            pom.artifactId = 'tomcat-plugin'
+            pom.groupId='uk.co.o2.apigateway.support'
+        }
+
+    }
+}
