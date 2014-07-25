@@ -36,8 +36,8 @@ tomcatconfig {
     ]
     ssl = [
         port: 8443,
-        cert: "ssl/accounts.keystore",
-        truststore: [path: "ssl/truststore.jks", password:"password"]
+        cert: "$projectDir/ssl/accounts.keystore",
+        truststore: [path: "$projectDir/ssl/truststore.jks", password:"password"]
     ]
     debugPort = 9000
     jvmOptions = "-XX:MaxPermSize=512m"

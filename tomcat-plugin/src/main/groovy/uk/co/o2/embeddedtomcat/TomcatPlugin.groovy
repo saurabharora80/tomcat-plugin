@@ -82,9 +82,7 @@ class TomcatPluginConfig {
         if (ssl == null) {
             return null;
         }
-        def truststoreConfig = ssl.truststore ? new TruststoreConfig(path: "$project.projectDir/${ssl.truststore.path}", password: ssl.truststore.password) : null
-        new SslConfig(port: Verify.isAnInteger(ssl.port, "ssl.port"), certLocation: "$project.projectDir/${ssl.cert}",
-                truststore: truststoreConfig)
+        new SslConfig(ssl)
     }
 
     Integer getDebugPort() {
@@ -104,6 +102,12 @@ class SslConfig {
     Integer port
     String certLocation
     TruststoreConfig truststore
+
+    SslConfig(ssl) {
+        this.port = Verify.isAnInteger(ssl.port, "ssl.port")
+        this.certLocation = ssl.cert
+        this.truststore = ssl.truststore ? new TruststoreConfig(path: ssl.truststore.path, password: ssl.truststore.password) : null
+    }
 }
 
 class TruststoreConfig {
