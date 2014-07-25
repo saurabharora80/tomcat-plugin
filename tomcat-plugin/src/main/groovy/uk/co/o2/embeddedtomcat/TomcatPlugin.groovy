@@ -1,5 +1,6 @@
 package uk.co.o2.embeddedtomcat
 
+import groovy.transform.ToString
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 
@@ -14,17 +15,6 @@ class TomcatPlugin implements Plugin<Project> {
         }
 
         project.task('startEmbeddedTomcat').dependsOn('stopEmbeddedTomcat') << {
-            if (shouldPerformCleanStartUp()) {
-                println "-- clean startup; deleting embeddedtomcat directory"
-                config.tomcatbasedir.deleteDir()
-            } else {
-                println "-- cleaning up logs, work and exploded war directories"
-                new File("${config.tomcatbasedir}/logs").deleteDir()
-                new File("${config.tomcatbasedir}/work").deleteDir()
-                config.tomcatbasedir.listFiles().each { if (it.isFile()) { it.delete() } }
-                config.webappdir.listFiles().each { if (it.isDirectory()) { it.deleteDir() }}
-            }
-
             new StartEmbeddedTomcat(config.tomcatbasedir, project.configurations.embeddedtomcat)
                     .onHttpPort(config.httpPort).enableSSL(config.ssl).enableDebug(config.debugPort)
                     .withJvmOptions(config.jvmOptions).withJvmProperties(config.jvmProperties)
@@ -32,11 +22,9 @@ class TomcatPlugin implements Plugin<Project> {
         }
     }
 
-    static boolean shouldPerformCleanStartUp() {
-        System.getProperty("cleanET") != null
-    }
 }
 
+@ToString
 class TomcatPluginExtension {
     def httpPort = 9191
     def warUrls
@@ -82,7 +70,7 @@ class TomcatPluginConfig {
         if (ssl == null) {
             return null;
         }
-        new SslConfig(ssl)
+        SslConfig.parse(ssl)
     }
 
     Integer getDebugPort() {
@@ -98,18 +86,22 @@ class TomcatPluginConfig {
     }
 }
 
+@ToString
 class SslConfig {
     Integer port
-    String certLocation
+    String cert
     TruststoreConfig truststore
 
-    SslConfig(ssl) {
-        this.port = Verify.isAnInteger(ssl.port, "ssl.port")
-        this.certLocation = ssl.cert
-        this.truststore = ssl.truststore ? new TruststoreConfig(path: ssl.truststore.path, password: ssl.truststore.password) : null
+    static SslConfig parse(def ssl) {
+        new SslConfig(
+                port: Verify.isAnInteger(ssl.port, "ssl.port"),
+                cert: ssl.cert,
+                truststore: ssl.truststore ? new TruststoreConfig(path: ssl.truststore.path, password: ssl.truststore.password) : null
+        )
     }
 }
 
+@ToString
 class TruststoreConfig {
     String path
     String password

@@ -10,6 +10,7 @@ class StartEmbeddedTomcat {
     private Integer debugPort
     private String jvmOptions
     private String jvmProperties
+    private File webappdir
 
     StartEmbeddedTomcat(File projectDir, Configuration gradleConfigurationForClasspath) {
         this(projectDir, gradleConfigurationForClasspath.collect { return it.absolutePath }.join(File.pathSeparator))
@@ -18,6 +19,24 @@ class StartEmbeddedTomcat {
     StartEmbeddedTomcat(File tomcatbasedir, String classpath) {
         this.classpath = classpath
         this.tomcatbasedir = tomcatbasedir
+        this.webappdir = new File("$tomcatbasedir/webapps")
+
+        if (shouldPerformCleanStartUp()) {
+            if (tomcatbasedir.exists()) {
+                println "-- clean startup; deleting embeddedtomcat directory"
+                tomcatbasedir.deleteDir()
+            }
+        } else {
+            println "-- cleaning up logs, work and exploded war directories"
+            new File("${tomcatbasedir}/logs").deleteDir()
+            new File("${tomcatbasedir}/work").deleteDir()
+            tomcatbasedir.listFiles().each { if (it.isFile()) {it.delete()}}
+            this.webappdir.listFiles().each { if (it.isDirectory()) { it.deleteDir() }}
+        }
+    }
+
+    private static boolean shouldPerformCleanStartUp() {
+        System.getProperty("cleanET") != null
     }
 
     StartEmbeddedTomcat onHttpPort(Integer port) {
@@ -52,7 +71,7 @@ class StartEmbeddedTomcat {
                 "$tomcatbasedir ${warnames.join(",")}"
 
         if (ssl != null) {
-            processStartString += " $ssl.port $ssl.certLocation"
+            processStartString += " $ssl.port $ssl.cert"
         }
 
         println("Starting Tomcat -> $processStartString")
@@ -82,18 +101,11 @@ class StartEmbeddedTomcat {
     }
 
     private static String[] downloadOrCopyWarsOnCleanStartUp(File webappsDirectory, WarPath[] warPaths) {
-        if (!webappsDirectory.exists()) {
-            webappsDirectory.mkdirs()
-        }
         for (WarPath path : warPaths) {
-            if (TomcatPlugin.shouldPerformCleanStartUp()) {
-                downloadWar(path, webappsDirectory)
+            if (new File("$webappsDirectory/$path.warname").exists()) {
+                println " -- skipping downloading $path.warname as it already exists; to download the war again pass -DcleanET"
             } else {
-                if(new File("$webappsDirectory/$path.warname").exists()) {
-                    println " -- skipping downloading $path.warname as it already exists; to download the war again pass -DcleanET"
-                } else {
-                    downloadWar(path, webappsDirectory)
-                }
+                downloadWar(path, webappsDirectory)
             }
         }
 
@@ -101,7 +113,11 @@ class StartEmbeddedTomcat {
     }
 
     private static void downloadWar(WarPath path, File webappsDirectory) {
-        if (path.isUrl()) {
+        if(!webappsDirectory.exists()) {
+            webappsDirectory.mkdirs()
+        }
+        if (path.isUrl())
+        {
             println("-- Downloading $path.value")
             new FileOutputStream("$webappsDirectory/$path.warname").write(path.value.openStream().bytes)
         } else {
@@ -126,7 +142,7 @@ class StartEmbeddedTomcat {
         if (jvmProperties != null) {
             jvmArgs += " $jvmProperties"
         }
-        if(ssl && ssl.truststore) {
+        if (ssl && ssl.truststore) {
             jvmArgs += " -Djavax.net.ssl.trustStore=$ssl.truststore.path -Djavax.net.ssl.trustStorePassword=$ssl.truststore.password"
         }
         jvmArgs
