@@ -1,8 +1,8 @@
-package uk.co.o2.embeddedtomcat
+package uk.co.o2.gradleplugin.multiwartomcat
 
 import org.gradle.api.artifacts.Configuration
 
-class StartEmbeddedTomcat {
+class StartMultiwarTomcat {
     private Integer httpPort
     private String classpath
     private String tomcatbasedir
@@ -12,18 +12,18 @@ class StartEmbeddedTomcat {
     private String jvmProperties
     private File webappdir
 
-    StartEmbeddedTomcat(File projectDir, Configuration gradleConfigurationForClasspath) {
+    StartMultiwarTomcat(File projectDir, Configuration gradleConfigurationForClasspath) {
         this(projectDir, gradleConfigurationForClasspath.collect { return it.absolutePath }.join(File.pathSeparator))
     }
 
-    StartEmbeddedTomcat(File tomcatbasedir, String classpath) {
+    StartMultiwarTomcat(File tomcatbasedir, String classpath) {
         this.classpath = classpath
         this.tomcatbasedir = tomcatbasedir
         this.webappdir = new File("$tomcatbasedir/webapps")
 
         if (shouldPerformCleanStartUp()) {
             if (tomcatbasedir.exists()) {
-                println "-- clean startup; deleting embeddedtomcat directory"
+                println "-- clean startup; deleting $tomcatbasedir"
                 tomcatbasedir.deleteDir()
             }
         } else {
@@ -36,30 +36,30 @@ class StartEmbeddedTomcat {
     }
 
     private static boolean shouldPerformCleanStartUp() {
-        System.getProperty("cleanET") != null
+        System.getProperty("cleanMT") != null
     }
 
-    StartEmbeddedTomcat onHttpPort(Integer port) {
+    StartMultiwarTomcat onHttpPort(Integer port) {
         this.httpPort = port
         return this
     }
 
-    StartEmbeddedTomcat enableSSL(SslConfig ssl) {
+    StartMultiwarTomcat enableSSL(SslConfig ssl) {
         this.ssl = ssl
         return this
     }
 
-    StartEmbeddedTomcat enableDebug(Integer port) {
+    StartMultiwarTomcat enableDebug(Integer port) {
         this.debugPort = port
         return this
     }
 
-    StartEmbeddedTomcat withJvmOptions(String jvmOptions) {
+    StartMultiwarTomcat withJvmOptions(String jvmOptions) {
         this.jvmOptions = jvmOptions
         return this
     }
 
-    StartEmbeddedTomcat withJvmProperties(String[] jvmProperties) {
+    StartMultiwarTomcat withJvmProperties(String[] jvmProperties) {
         this.jvmProperties = jvmProperties?.join(' ')
         return this
     }
@@ -67,7 +67,7 @@ class StartEmbeddedTomcat {
     void andDeployApps(File webappsDir, WarPath... urlOfWarsToDeploy) {
         String[] warnames = downloadOrCopyWarsOnCleanStartUp(webappsDir, urlOfWarsToDeploy)
 
-        def processStartString = "java -classpath ${classpath} ${jvmArgs()} ${EmbeddedTomcat.class.name} ${httpPort} " +
+        def processStartString = "java -classpath ${classpath} ${jvmArgs()} ${MultiwarTomcat.class.name} ${httpPort} " +
                 "$tomcatbasedir ${warnames.join(",")}"
 
         if (ssl != null) {
@@ -81,6 +81,16 @@ class StartEmbeddedTomcat {
 
         waitForTomcat()
 
+        println "Tomcat Started "
+        println "applications:"
+
+        warnames.each {
+            def appname = it.replace(".war", "")
+            println "$appname on http://localhost:$httpPort/$appname"
+            if(ssl) {
+                println "$appname on https://localhost:$ssl.port/$appname"
+            }
+        }
     }
 
     private void waitForTomcat() {
@@ -97,13 +107,13 @@ class StartEmbeddedTomcat {
             }
             ++count
         }
-        println "Tomcat Started"
+
     }
 
     private static String[] downloadOrCopyWarsOnCleanStartUp(File webappsDirectory, WarPath[] warPaths) {
         for (WarPath path : warPaths) {
             if (new File("$webappsDirectory/$path.warname").exists()) {
-                println " -- skipping downloading $path.warname as it already exists; to download the war again pass -DcleanET"
+                println " -- skipping downloading $path.warname as it already exists; to download the war again pass -DcleanMT"
             } else {
                 downloadWar(path, webappsDirectory)
             }

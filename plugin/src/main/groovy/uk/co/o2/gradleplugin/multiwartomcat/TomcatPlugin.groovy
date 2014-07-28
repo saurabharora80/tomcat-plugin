@@ -1,4 +1,4 @@
-package uk.co.o2.embeddedtomcat
+package uk.co.o2.gradleplugin.multiwartomcat
 
 import groovy.transform.ToString
 import org.gradle.api.Plugin
@@ -7,15 +7,15 @@ import org.gradle.api.Project
 class TomcatPlugin implements Plugin<Project> {
 
     void apply(Project project) {
-        project.extensions.create("tomcatconfig", TomcatPluginExtension)
-        TomcatPluginConfig config = new TomcatPluginConfig(project, "tomcatconfig")
+        project.extensions.create("multiwartomcatconfig", TomcatPluginExtension)
+        TomcatPluginConfig config = new TomcatPluginConfig(project, "multiwartomcatconfig")
 
-        project.task("stopEmbeddedTomcat") << {
-            EmbeddedTomcatStopper.stop(config.httpPort)
+        project.task("stopMultiwarTomcat") << {
+            MultiwarTomcatStopper.stop(config.httpPort)
         }
 
-        project.task('startEmbeddedTomcat').dependsOn('stopEmbeddedTomcat') << {
-            new StartEmbeddedTomcat(config.tomcatbasedir, project.configurations.embeddedtomcat)
+        project.task('startMultiwarTomcat').dependsOn('stopMultiwarTomcat') << {
+            new StartMultiwarTomcat(config.tomcatbasedir, project.configurations.multiwartomcat)
                     .onHttpPort(config.httpPort).enableSSL(config.ssl).enableDebug(config.debugPort)
                     .withJvmOptions(config.jvmOptions).withJvmProperties(config.jvmProperties)
                     .andDeployApps(config.webappdir, config.urlOfWarsToDeploy)
@@ -27,7 +27,7 @@ class TomcatPlugin implements Plugin<Project> {
 @ToString
 class TomcatPluginExtension {
     def httpPort = 9191
-    def warUrls
+    def wars
     def ssl
     def debugPort
     def jvmOptions = "-Xms256m -Xmx1G -XX:MaxPermSize=512m"
@@ -49,7 +49,7 @@ class TomcatPluginConfig {
 
 
     File getTomcatbasedir() {
-        new File("$project.projectDir/embeddedtomcat")
+        new File("$project.projectDir/multiwartomcat")
     }
 
 
@@ -58,7 +58,7 @@ class TomcatPluginConfig {
     }
 
     WarPath[] getUrlOfWarsToDeploy() {
-        config().get("warUrls").collect { new WarPath((String) it) }
+        config().get("wars").collect { new WarPath((String) it) }
     }
 
     private Map config() {
@@ -66,11 +66,7 @@ class TomcatPluginConfig {
     }
 
     SslConfig getSsl() {
-        def ssl = config().get("ssl")
-        if (ssl == null) {
-            return null;
-        }
-        SslConfig.parse(ssl)
+        return new SslConfig(config().get("ssl"), tomcatbasedir)
     }
 
     Integer getDebugPort() {
@@ -92,12 +88,34 @@ class SslConfig {
     String cert
     TruststoreConfig truststore
 
-    static SslConfig parse(def ssl) {
-        new SslConfig(
-                port: Verify.isAnInteger(ssl.port, "ssl.port"),
-                cert: ssl.cert,
-                truststore: ssl.truststore ? new TruststoreConfig(path: ssl.truststore.path, password: ssl.truststore.password) : null
-        )
+    SslConfig(def ssl, File tomcatbasedir) {
+        if (ssl && ssl.port) {
+            port = Verify.isAnInteger(ssl.port, "ssl.port")
+        } else {
+            port = 8443
+        }
+        if (ssl && ssl.cert) {
+            cert = ssl.cert
+        } else {
+            cert = readFromClasspath(tomcatbasedir, "selfsignedcert.keystore")
+        }
+        if (ssl && ssl.truststore) {
+            truststore = new TruststoreConfig(path: ssl.truststore.path, password: ssl.truststore.password)
+        } else {
+            truststore = new TruststoreConfig(path: readFromClasspath(tomcatbasedir, "apigatewaycert-truststore.jks"), password: "password")
+        }
+    }
+
+    private String readFromClasspath(File tomcatbasedir, String filename) {
+        File sslDir = new File("$tomcatbasedir/ssl")
+        if(!sslDir.exists()) {
+            sslDir.mkdir()
+        }
+
+        File certFile = new File(sslDir, filename)
+        certFile.write(this.class.getClassLoader().getResourceAsStream("ssl/$filename").text)
+
+        certFile.absolutePath
     }
 }
 

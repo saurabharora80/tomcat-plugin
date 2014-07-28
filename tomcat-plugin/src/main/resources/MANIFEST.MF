@@ -1,6 +1,0 @@
-Manifest-Version: 1.0
-Version: 2.00.05
-Git-Revision: not built from CI
-Build-Tag: not built from CI
-MainClass: uk.co.o2.embeddedtomcat.StartTomcat
-

@@ -3,8 +3,8 @@ ext.sourceCompatibility = org.gradle.api.JavaVersion.VERSION_1_7
 ext.targetCompatibility = org.gradle.api.JavaVersion.VERSION_1_7
 
 allprojects {
-    group = 'uk.co.o2.tomcatplugin'
-    version = '0.1.0'
+    group = 'uk.co.o2.gradleplugins'
+    version = '0.2.0'
     repositories {
         maven {
             name "nexus"

@@ -1,5 +1,5 @@
-rootProject.name = "tomcat-plugin"
+rootProject.name = "gradle-multiwar-tomcat-plugin"
 
-include "tomcat-plugin"
+include "plugin"
 
 

@@ -1,4 +1,4 @@
-package uk.co.o2.embeddedtomcat
+package uk.co.o2.gradleplugin.multiwartomcat
 
 /**
  * Created by ee on 17/07/14.

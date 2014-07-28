@@ -7,7 +7,7 @@ buildscript {
         }
     }
     dependencies {
-        classpath files("$projectDir/../tomcat-plugin/build/libs/tomcat-plugin-0.1.0.jar")
+        classpath files("$projectDir/../plugin/build/libs/plugin-0.2.0.jar")
     }
 }
 
@@ -18,26 +18,26 @@ repositories {
     }
 }
 
-apply plugin: "tomcat-plugin"
+apply plugin: "multiwar-tomcat"
 
 configurations {
-    embeddedtomcat
+    multiwartomcat
 }
 
 dependencies {
-    embeddedtomcat files("$projectDir/../tomcat-plugin/build/libs/tomcat-plugin-0.1.0.jar")
+    multiwartomcat files("$projectDir/../plugin/build/libs/plugin-0.2.0.jar")
 }
 
-tomcatconfig {
+multiwartomcatconfig {
     httpPort = 8444
-    warUrls = [
+    wars = [
         "../../accounts/accounts/build/libs/accounts.war",
         "http://deneb.dev.o2.co.uk:8095/job/aniserver_DEV/lastSuccessfulBuild/artifact/aniserver/build/libs/aniserver.war"
     ]
     ssl = [
-        port: 8443,
-        cert: "$projectDir/ssl/accounts.keystore",
-        truststore: [path: "$projectDir/ssl/truststore.jks", password:"password"]
+        port: 8445,
+        cert: "$projectDir/ssl/selfsignedcert_external.keystore",
+        truststore: [path: "$projectDir/ssl/apigatewaycert-truststore_external.jks", password:"password"]
     ]
     debugPort = 9000
     jvmOptions = "-XX:MaxPermSize=512m"

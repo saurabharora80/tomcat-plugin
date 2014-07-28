@@ -1,6 +1,6 @@
 *.i??
 */build
 */.gradle
-tomcat-plugin-testbed/embeddedtomcat/
+testbed/multiwartomcat/
 out/
 .gradle

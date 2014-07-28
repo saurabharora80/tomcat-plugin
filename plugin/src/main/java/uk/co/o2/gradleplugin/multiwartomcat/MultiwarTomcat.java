@@ -1,4 +1,4 @@
-package uk.co.o2.embeddedtomcat;
+package uk.co.o2.gradleplugin.multiwartomcat;
 
 import org.apache.catalina.Context;
 import org.apache.catalina.LifecycleException;
@@ -13,7 +13,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 
-public class EmbeddedTomcat {
+public class MultiwarTomcat {
 
     @SuppressWarnings("serial")
     public static void main(String[] args) throws ServletException, LifecycleException {
