@@ -109,7 +109,7 @@ class SslConfig {
     private String readFromClasspath(File tomcatbasedir, String filename) {
         File sslDir = new File("$tomcatbasedir/ssl")
         if(!sslDir.exists()) {
-            sslDir.mkdir()
+            sslDir.mkdirs()
         }
 
         File certFile = new File(sslDir, filename)
