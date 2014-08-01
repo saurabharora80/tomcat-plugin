@@ -120,7 +120,7 @@ class SslConfig {
         }
 
         File certFile = new File(sslDir, filename)
-        certFile.write(this.class.getClassLoader().getResourceAsStream("ssl/$filename").text)
+        certFile.setBytes(this.class.getClassLoader().getResourceAsStream("ssl/$filename").bytes)
 
         certFile.absolutePath
     }
