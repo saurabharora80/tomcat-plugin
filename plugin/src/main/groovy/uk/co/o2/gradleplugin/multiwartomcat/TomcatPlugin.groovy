@@ -21,17 +21,17 @@ class TomcatPlugin implements Plugin<Project> {
                     .andDeployApps(config.webappdir, config.urlOfWarsToDeploy)
         }
     }
-
 }
 
 @ToString
 class TomcatPluginExtension {
-    def httpPort = 9191
+    def httpPort = 8080
     def wars
     def ssl
     def debugPort
     def jvmOptions = "-Xms256m -Xmx1G -XX:MaxPermSize=512m"
     def jvmProperties
+    def enableSsl = false
 }
 
 class TomcatPluginConfig {
@@ -66,7 +66,10 @@ class TomcatPluginConfig {
     }
 
     SslConfig getSsl() {
-        return new SslConfig(config().get("ssl"), tomcatbasedir)
+        if(config().get("enableSsl")) {
+            return new SslConfig(config().get("ssl"), tomcatbasedir)
+        }
+        return null
     }
 
     Integer getDebugPort() {
@@ -87,6 +90,8 @@ class SslConfig {
     Integer port
     String cert
     TruststoreConfig truststore
+    boolean defaultSelfSignedCert
+    boolean defaultTrustore
 
     SslConfig(def ssl, File tomcatbasedir) {
         if (ssl && ssl.port) {
@@ -97,11 +102,13 @@ class SslConfig {
         if (ssl && ssl.cert) {
             cert = ssl.cert
         } else {
+            defaultSelfSignedCert = true
             cert = readFromClasspath(tomcatbasedir, "selfsignedcert.keystore")
         }
         if (ssl && ssl.truststore) {
             truststore = new TruststoreConfig(path: ssl.truststore.path, password: ssl.truststore.password)
         } else {
+            defaultTrustore = true
             truststore = new TruststoreConfig(path: readFromClasspath(tomcatbasedir, "apigatewaycert-truststore.jks"), password: "password")
         }
     }

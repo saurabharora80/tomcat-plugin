@@ -29,11 +29,13 @@ dependencies {
 }
 
 multiwartomcatconfig {
-    httpPort = 8444
+    //httpPort = 8444
     wars = [
         "../../accounts/accounts/build/libs/accounts.war",
         "http://deneb.dev.o2.co.uk:8095/job/aniserver_DEV/lastSuccessfulBuild/artifact/aniserver/build/libs/aniserver.war"
     ]
+    enableSsl = true
+
     ssl = [
         port: 8445,
         cert: "$projectDir/ssl/selfsignedcert_external.keystore",

@@ -72,6 +72,12 @@ class StartMultiwarTomcat {
 
         if (ssl != null) {
             processStartString += " $ssl.port $ssl.cert"
+            if(ssl.defaultSelfSignedCert) {
+                println "using default self signed cert for the tomcat"
+            }
+            if(ssl.defaultTrustore) {
+                println "using default truststore containing apigateway cert to allow apps on this tomcat to call apigateway"
+            }
         }
 
         println("Starting Tomcat -> $processStartString")

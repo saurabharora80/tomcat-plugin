@@ -4,7 +4,7 @@ ext.targetCompatibility = org.gradle.api.JavaVersion.VERSION_1_7
 
 allprojects {
     group = 'uk.co.o2.gradleplugins'
-    version = '0.2.0'
+    version = 'x.2.0'
     repositories {
         maven {
             name "nexus"
